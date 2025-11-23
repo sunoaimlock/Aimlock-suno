@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auxílio External @SUNO</title>
+<style>
+:root {
+  --primary-color: red; /* Cor principal do painel */
+}
+
+/* RESET & BODY */
+html, body {margin:0; padding:0; height:100%; font-family:'Segoe UI', sans-serif; overflow:hidden; background:black; color:white; user-select:none;}
+canvas{position:fixed; top:0; left:0; width:100%; height:100%; z-index:0;}
+
+/* LOGIN */
+#loginBox{
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:320px; background:rgba(0,0,0,0.6); backdrop-filter:blur(6px);
+  padding:20px; border-radius:12px; border:1px solid var(--primary-color);
+  text-align:center; z-index:2;
+}
+#loginBox h1{color:var(--primary-color); font-size:26px; margin-bottom:20px; text-shadow:0 0 10px var(--primary-color);}
+#loginBox input[type="password"]{
+  width:100%; padding:8px; border-radius:6px; border:1px solid var(--primary-color); margin-bottom:12px;
+  background:rgba(255,255,255,0.05); color:white; font-size:14px;
+}
+#loginBox button{
+  width:100%; padding:10px; font-weight:bold; font-size:14px;
+  border-radius:8px; border:none; cursor:pointer;
+  background:linear-gradient(to right,var(--primary-color),#000); color:white;
+  box-shadow:0 0 12px var(--primary-color); transition:transform 0.1s ease;
+}
+#loginBox button:active{transform:scale(0.95);}
+#loginMessage{font-size:14px; margin-top:8px; height:18px; color:var(--primary-color); font-weight:bold;}
+.desenvolvedor-login{color:var(--primary-color); margin-top:8px; font-size:13px;}
+#loginImage{width:100px; height:100px; object-fit:cover; border-radius:8px; margin-bottom:12px;}
+
+/* TELA PRINCIPAL */
+#painel-principal{
+  display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:400px; min-height:520px; backdrop-filter:blur(10px); background: rgba(30,0,0,0.5);
+  border:1px solid var(--primary-color); border-radius:15px; padding:16px;
+  box-shadow:0 0 12px var(--primary-color); text-align:center; z-index:2;
+  opacity:0; transition: opacity 0.5s ease;
+}
+#painel-principal h1{ font-size:22px; color:var(--primary-color); margin-bottom:8px; text-shadow:0 0 8px var(--primary-color);}
+#painel-principal .subtitulo{ font-size:16px; color:#ff6666; margin-bottom:12px;}
+
+/* NAV BOTÕES */
+#navButtons{display:flex; justify-content:space-around; margin-bottom:14px;}
+#navButtons button{
+  flex:1; margin:0 4px; padding:8px; font-weight:bold; font-size:14px;
+  border-radius:8px; border:none; cursor:pointer;
+  background:linear-gradient(to right,var(--primary-color),#000); color:white;
+  box-shadow:0 0 10px var(--primary-color); transition:all 0.2s ease;
+  opacity:0.7;
+}
+#navButtons button.active{
+  opacity:1;
+  background:linear-gradient(to right,#ff3333,var(--primary-color));
+  box-shadow:0 0 18px var(--primary-color);
+}
+#navButtons button:active{filter:brightness(1.3);}
+
+/* CONTEÚDO DAS TELAS */
+.screen{display:none;}
+.screen.active{display:block;}
+
+.btn{
+  width:100%; padding:12px; font-weight:bold; font-size:16px;
+  border-radius:10px; border:none; cursor:pointer;
+  color:white; background: linear-gradient(to right, var(--primary-color), #000);
+  box-shadow:0 0 14px var(--primary-color);
+  transition: transform 0.1s ease, filter 0.2s ease;
+  margin-top:14px;
+}
+.btn:active{transform:scale(0.95); filter:brightness(1.4);}
+label{display:block; font-size:14px; margin:8px 0 4px; text-align:left;}
+input[type="checkbox"]{accent-color:var(--primary-color); transform:scale(1.1); margin-right:6px;}
+.slider-info{text-align:center; margin-top:-6px; margin-bottom:8px; font-size:13px;}
+.aux-btn{flex:1; margin:0 2px; padding:6px; font-size:14px; border-radius:6px; border:none; cursor:pointer; background:#440000; color:white; box-shadow:0 0 8px var(--primary-color); opacity:0.6; transition:all 0.2s ease;}
+.aux-btn.selected{background:var(--primary-color); opacity:1;}
+.aux-btn:active{transform:scale(0.95); filter:brightness(1.3);}
+.desenvolvedor{margin-top:10px; font-size:13px; color:var(--primary-color);}
+#msgSucesso{position:absolute; top:calc(50% + 250px); left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,0.85); color:var(--primary-color); padding:8px 14px; border-radius:10px;
+  font-weight:bold; font-size:14px; opacity:0; transition:opacity 0.4s ease; text-align:center; z-index:4;}
+#msgSucesso.show{opacity:1;}
+#fovCanvas{position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:5;}
+
+/* Banner Códigos Injetados */
+#bannerInject {
+  position:fixed; top:10px; left:50%; transform:translateX(-50%);
+  background:var(--primary-color); color:black; padding:10px 20px;
+  font-weight:bold; font-size:18px; border-radius:8px;
+  box-shadow:0 0 12px var(--primary-color); display:none; z-index:10;
+}
+
+/* Tema INFO buttons */
+#temaButtons { display:flex; justify-content:center; gap:10px; margin-top:12px; }
+#temaButtons button{
+  padding:6px 14px; border:none; border-radius:6px; cursor:pointer;
+  font-weight:bold; color:black;
+}
+#temaAzul{background:blue;}
+#temaAmarelo{background:yellow;}
+#temaRosa{background:pink;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<canvas id="loginStarsCanvas"></canvas>
+<div id="loginBox">
+  <h1>Auxílio External @SUNO</h1>
+  <input type="password" id="senha" placeholder="Adicione Sua Key">
+  <button id="btnLogin">ACESSAR PAINEL</button>
+  <div class="desenvolvedor-login">@SUNO</div>
+  <div id="loginMessage"></div>
+</div>
+
+<!-- TELA PRINCIPAL -->
+<div id="painel-principal">
+  <div id="navButtons">
+    <button id="btnFFH4X" class="active">FFH4X</button>
+    <button id="btnInfo">INFO</button>
+    <button id="btnSensiAndroid">SENSI ANDROID</button>
+    <button id="btnSensiIphone">SENSI IPHONE</button>
+  </div>
+
+  <!-- FFH4X -->
+  <div id="screenOpcoes" class="screen active">
+    <h1>Auxílio @SUNO</h1>
+    <div class="subtitulo">Painel External @SUNO, Um Dos Melhores Do Cenário!!!</div>
+    <label><input type="checkbox" id="auxCabeca">Aimbot Legit</label>
+    <label><input type="checkbox" id="aimFov">Norecoil Full</label>
+
+    <div id="tipoFocoButtons" style="margin:12px 0;">
+      <label>Tipo de Foco</label>
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+        <button class="aux-btn" data-value="cabeca">Cabeça</button>
+        <button class="aux-btn" data-value="pescoco">Pescoço</button>
+        <button class="aux-btn" data-value="peito">Peito</button>
+      </div>
+    </div>
+
+    <div id="auxilioHeadButtons" style="margin:12px 0;">
+      <label>Auxílio Head</label>
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+        <button class="aux-btn" data-value="leve">Leve</button>
+        <button class="aux-btn" data-value="medio">Médio</button>
+        <button class="aux-btn" data-value="forte">Forte</button>
+      </div>
+    </div>
+
+    <label><input type="checkbox" id="showFovCircle">Mostrar Roda Fov</label>
+    <input type="range" id="fov" min="1" max="360" value="90">
+    <div class="slider-info">Fov Atual: <span id="fovValue">90</span></div>
+
+    <button class="btn" id="btnInject">INJECT</button>
+    <div class="desenvolvedor">Criador Oficial @SUNO</div>
+  </div>
+
+  <!-- INFO -->
+  <div id="screenInfo" class="screen">
+    <h1>Bem-vindo ao Painel External @SUNO</h1>
+    <p>Ajuste Suas Opções E Clique Em INJECT Para Aplicar  Antes De Entrar No Jogo.</p>
+
+    <!-- Botões rápidos para abrir Free Fire (INFO screen) -->
+    <div style="margin-top:12px; display:flex; gap:8px; justify-content:center;">
+      <!-- usamos os mesmos IDs que você tinha antes -->
+      <button class="btn" id="btnAbrirFFInfo" style="flex:1; max-width:180px; padding:10px;">FF NORMAL</button>
+      <button class="btn" id="btnAbrirFFMaxInfo" style="flex:1; max-width:180px; padding:10px;">FF MAX</button>
+    </div>
+
+    <h2>INSTAGRAM:</h2>
+    <a href="https://www.instagram.com/rafrpt7?igsh=MWo0ODNrZTloaDI5Yg==" target="_blank" rel="noopener noreferrer">Instagram @SUNO</a>
+    <h2>TIKTOK:</h2>
+    <a href="https://www.tiktok.com/@sunoz1n?_r=1&_t=ZM-91Gd9CowKLL" target="_blank" rel="noopener noreferrer">@SUNO</a>
+    <div id="temaButtons">
+      <button id="temaAzul">AZUL</button>
+      <button id="temaAmarelo">AMARELO</button>
+      <button id="temaRosa">ROSA</button>
+    </div>
+    <button class="btn" id="btnInjectInfo">INJECT</button>
+  </div>
+
+  <!-- SENSI ANDROID -->
+  <div id="screenSensiAndroid" class="screen">
+    <h1>SENSI ANDROID</h1>
+    <div class="subtitulo">Sensibilidade Gerada Para Android</div>
+    <div id="sensiBoxAndroid" class="sensiBox">
+      <label class="sensi-label">Geral: <span class="sensi-value" id="sensiGeralAndroid">--</span></label>
+      <label class="sensi-label">Red Dot: <span class="sensi-value" id="sensiRedDotAndroid">--</span></label>
+      <label class="sensi-label">2x: <span class="sensi-value" id="sensi2xAndroid">--</span></label>
+      <label class="sensi-label">4x: <span class="sensi-value" id="sensi4xAndroid">--</span></label>
+      <label class="sensi-label">Botão: <span class="sensi-value" id="sensiBotaoAndroid">--</span></label>
+      <label class="sensi-label">DPI: <span class="sensi-value" id="sensiDpiAndroid">--</span></label>
+      <button class="btn" id="btnGerarSensiAndroid">GERAR SENSI</button>
+    </div>
+  </div>
+
+  <!-- SENSI IPHONE -->
+  <div id="screenSensiIphone" class="screen">
+    <h1>SENSI IPHONE</h1>
+    <div class="subtitulo">Sensibilidade Gerada Para iPhone</div>
+    <div id="sensiBoxIphone" class="sensiBox">
+      <label class="sensi-label">Geral: <span class="sensi-value" id="sensiGeralIphone">--</span></label>
+      <label class="sensi-label">Red Dot: <span class="sensi-value" id="sensiRedDotIphone">--</span></label>
+      <label class="sensi-label">2x: <span class="sensi-value" id="sensi2xIphone">--</span></label>
+      <label class="sensi-label">4x: <span class="sensi-value" id="sensi4xIphone">--</span></label>
+      <label class="sensi-label">Botão: <span class="sensi-value" id="sensiBotaoIphone">--</span></label>
+      <label class="sensi-label">Ciclos: <span class="sensi-value" id="sensiCiclosIphone">--</span></label>
+      <button class="btn" id="btnGerarSensiIphone">GERAR SENSI</button>
+    </div>
+  </div>
+</div>
+
+<div id="bannerInject">CÓDIGOS INJETADOS!!! 😈</div>
+<div id="msgSucesso"></div>
+<canvas id="fovCanvas"></canvas>
+<audio id="rainAudio" src="https://www.soundjay.com/nature/rain-01.mp3" autoplay loop playsinline></audio>
+
+<script>
+// === Áudio chuva ===
+const rainAudio = document.getElementById('rainAudio'); 
+rainAudio.volume = 0.15; 
+rainAudio.play().catch(()=>{});
+
+// === LOGIN ===
+const btnLogin = document.getElementById('btnLogin');
+const senhaInput = document.getElementById('senha');
+const loginBox = document.getElementById('loginBox');
+const painel = document.getElementById('painel-principal');
+const loginMessage = document.getElementById('loginMessage');
+const msgSucesso = document.getElementById('msgSucesso');
+
+btnLogin.addEventListener('click', ()=>{
+  if(senhaInput.value === "S7"){
+    loginMessage.textContent="";
+    msgSucesso.textContent="ACESSANDO PAINEL XIT!!!";
+    msgSucesso.classList.add("show");
+    setTimeout(()=>{
+      msgSucesso.classList.remove("show");
+      loginBox.style.transition='opacity 0.5s';
+      loginBox.style.opacity='0';
+      setTimeout(()=>{
+        loginBox.style.display='none';
+        painel.style.display='block';
+        setTimeout(()=>{ painel.style.opacity='1'; },50);
+      },500);
+    },2500);
+  } else { loginMessage.textContent="SENHA ERRADA"; }
+});
+
+// === Navegação ===
+const tabs = [
+  {btn:'btnFFH4X', screen:'screenOpcoes'},
+  {btn:'btnInfo', screen:'screenInfo'},
+  {btn:'btnSensiAndroid', screen:'screenSensiAndroid'},
+  {btn:'btnSensiIphone', screen:'screenSensiIphone'}
+];
+
+tabs.forEach(t=>{
+  const b = document.getElementById(t.btn);
+  const s = document.getElementById(t.screen);
+  b.addEventListener('click', ()=>{ 
+    tabs.forEach(x=>document.getElementById(x.btn).classList.remove('active'));
+    tabs.forEach(x=>document.getElementById(x.screen).classList.remove('active'));
+    b.classList.add('active'); s.classList.add('active');
+  });
+});
+
+// === FOV ===
+const fov = document.getElementById("fov");
+const fovValue = document.getElementById("fovValue");
+fov.addEventListener("input", ()=>{ fovValue.textContent=fov.value; });
+
+const fovCanvas = document.getElementById('fovCanvas');
+const ctxFov = fovCanvas.getContext('2d');
+function resizeFov(){ fovCanvas.width = window.innerWidth; fovCanvas.height = window.innerHeight; }
+window.addEventListener('resize', resizeFov); resizeFov();
+
+function drawFovCircle(){
+  ctxFov.clearRect(0,0,fovCanvas.width,fovCanvas.height);
+  if(document.getElementById('showFovCircle').checked){
+    const centerX = fovCanvas.width/2;
+    const centerY = fovCanvas.height/2;
+    const radius = parseInt(fov.value,10);
+    ctxFov.beginPath();
+    ctxFov.arc(centerX, centerY, radius, 0, 2*Math.PI);
+    ctxFov.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
+    ctxFov.lineWidth = 4;
+    ctxFov.stroke();
+  }
+  requestAnimationFrame(drawFovCircle);
+}
+drawFovCircle();
+
+// === BOTÕES AUX ===
+['tipoFocoButtons','auxilioHeadButtons'].forEach(containerId=>{
+  const buttons = document.querySelectorAll(`#${containerId} .aux-btn`);
+  buttons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      buttons.forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+  });
+});
+
+// ========== SUNO TOUCH 6.0 ==========
+let sunoTouchActive = false;
+
+function ativarSunoTouch() {
+  if (sunoTouchActive) return;
+  sunoTouchActive = true;
+
+  let lastX = null;
+  let lastY = null;
+
+  let smoothFactor = 0.35;        
+  let predictiveFactor = 1.00;    
+  let accelLimiter = 0.40;        
+  let stabilityLock = 2.45;       
+  let responseBoost = 0.92;       
+  let microCorrect = 0.18;        
+
+  window.addEventListener("touchmove", (ev) => {
+    if (!sunoTouchActive) return;
+
+    const t = ev.touches[0];
+    let x = t.clientX;
+    let y = t.clientY;
+
+    if (lastX === null) {
+      lastX = x;
+      lastY = y;
+      return;
+    }
+
+    x = lastX + (x - lastX) * smoothFactor;
+    y = lastY + (y - lastY) * smoothFactor;
+
+    x += (x - lastX) * predictiveFactor;
+    y += (y - lastY) * predictiveFactor;
+
+    x = lastX + (x - lastX) * (1 - accelLimiter);
+    y = lastY + (y - lastY) * (1 - accelLimiter);
+
+    x = (x * (1 - stabilityLock)) + (lastX * stabilityLock);
+    y = (y * (1 - stabilityLock)) + (lastY * stabilityLock);
+
+    x = lastX + (x - lastX) * (1 - microCorrect);
+    y = lastY + (y - lastY) * (1 - microCorrect);
+
+    x = lastX + (x - lastX) * responseBoost;
+    y = lastY + (y - lastY) * responseBoost;
+
+    lastX = x;
+    lastY = y;
+  });
+
+  console.log("@SUNO");
+}
+
+// === FUNÇÃO INJECT ===
+function injectAction(){
+  const banner = document.getElementById('bannerInject');
+  banner.style.display = "block";
+
+  msgSucesso.textContent = "INJETANDO CÓDIGOS...";
+  msgSucesso.classList.add("show");
+
+  setTimeout(()=>{
+    msgSucesso.textContent = "CÓDIGOS INJETADOS!!! 😈";
+    setTimeout(()=>{ msgSucesso.classList.remove("show"); }, 2500);
+  },1500);
+
+  ativarSunoTouch();  // <-- ATIVA O 6.0 AQUI
+}
+
+document.getElementById("btnInject").addEventListener("click", injectAction);
+document.getElementById("btnInjectInfo").addEventListener("click", injectAction);
+
+// === SENSI ANDROID & IPHONE ===
+function gerarSensiAndroid(){
+  const geral = Math.floor(Math.random()*(200-80+1)+80);
+  const red = Math.floor(geral*0.9);
+  const x2 = Math.floor(geral*0.8);
+  const x4 = Math.floor(geral*0.7);
+  const botao = Math.floor(Math.random()*(60-30+1)+30);
+  const dpi = Math.floor(411 + ((960-411)*(200-geral)/(200-80)));
+  document.getElementById("sensiGeralAndroid").textContent = geral;
+  document.getElementById("sensiRedDotAndroid").textContent = red;
+  document.getElementById("sensi2xAndroid").textContent = x2;
+  document.getElementById("sensi4xAndroid").textContent = x4;
+  document.getElementById("sensiBotaoAndroid").textContent = botao;
+  document.getElementById("sensiDpiAndroid").textContent = dpi;
+}
+function gerarSensiIphone(){
+  const geral = Math.floor(Math.random()*(200-80+1)+80);
+  const red = Math.floor(geral*0.9);
+  const x2 = Math.floor(geral*0.8);
+  const x4 = Math.floor(geral*0.7);
+  const botao = Math.floor(Math.random()*(60-30+1)+30);
+  const ciclos = geral >= 160 ? 2 : geral >= 120 ? 4 : 6;
+  document.getElementById("sensiGeralIphone").textContent = geral;
+  document.getElementById("sensiRedDotIphone").textContent = red;
+  document.getElementById("sensi2xIphone").textContent = x2;
+  document.getElementById("sensi4xIphone").textContent = x4;
+  document.getElementById("sensiBotaoIphone").textContent = botao;
+  document.getElementById("sensiCiclosIphone").textContent = ciclos;
+}
+document.getElementById("btnGerarSensiAndroid").addEventListener("click", gerarSensiAndroid);
+document.getElementById("btnGerarSensiIphone").addEventListener("click", gerarSensiIphone);
+
+// === ESTRELAS LOGIN ===
+const canvasLoginStars = document.getElementById('loginStarsCanvas');
+const ctxLoginStars = canvasLoginStars.getContext('2d');
+function resizeLoginStars(){ 
+  canvasLoginStars.width = window.innerWidth; 
+  canvasLoginStars.height = window.innerHeight; 
+}
+window.addEventListener('resize', resizeLoginStars); 
+resizeLoginStars();
+
+let starsLogin = [];
+function initLoginStars(count){
+  starsLogin = [];
+  for(let i=0; i<count; i++){
+    starsLogin.push({
+      x: Math.random()*canvasLoginStars.width,
+      y: Math.random()*canvasLoginStars.height,
+      radius: 1 + Math.random()*2,
+      speed: 0.2 + Math.random()*0.3
+    });
+  }
+}
+function drawLoginStars(){
+  ctxLoginStars.clearRect(0, 0, canvasLoginStars.width, canvasLoginStars.height);
+  starsLogin.forEach(s=>{
+    ctxLoginStars.beginPath();
+    ctxLoginStars.arc(s.x, s.y, s.radius, 0, 2*Math.PI);
+    ctxLoginStars.fillStyle = "white";
+    ctxLoginStars.fill();
+    s.y += s.speed;
+    if(s.y > canvasLoginStars.height){ s.y = 0; s.x = Math.random()*canvasLoginStars.width; }
+  });
+  requestAnimationFrame(drawLoginStars);
+}
+initLoginStars(150);
+drawLoginStars();
+
+// === TEMAS INFO ===
+document.getElementById('temaAzul').addEventListener('click', ()=>{
+  document.documentElement.style.setProperty('--primary-color','blue'); 
+});
+document.getElementById('temaAmarelo').addEventListener('click', ()=>{
+  document.documentElement.style.setProperty('--primary-color','yellow'); 
+});
+document.getElementById('temaRosa').addEventListener('click', ()=>{
+  document.documentElement.style.setProperty('--primary-color','pink'); 
+});
+
+// === ABRIR APP: FF NORMAL / FF MAX ===
+// Estratégia: tenta abrir o URL scheme; se falhar, mostra fallback (alert).
+// Você pode substituir os alerts por redirecionamento para Play Store/App Store.
+
+function tryOpenApp(uri, fallbackMessage = "Não foi possível abrir o app.") {
+  // método moderno: tentar mudar location
+  let opened = false;
+  const now = Date.now();
+
+  // Para navegadores que suportam visibilitychange detectamos se a página ficou oculta (indicando que o app abriu)
+  function handleVisibility() {
+    if (document.hidden) opened = true;
+  }
+  document.addEventListener('visibilitychange', handleVisibility);
+
+  // tentativa via iframe (alguns browsers antigos)
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = uri;
+  document.body.appendChild(iframe);
+
+  // tentativa via location (muitos browsers irão seguir isso)
+  window.location.href = uri;
+
+  // depois de um tempo checar se abriu; se não, fallback
+  setTimeout(() => {
+    document.removeEventListener('visibilitychange', handleVisibility);
+    // remover iframe
+    try { document.body.removeChild(iframe); } catch(e){}
+    // se não abriu (opened false) => fallback
+    if (!opened) {
+      alert("⚠️ " + fallbackMessage + "\nVerifique se o jogo está instalado ou tente abrir manualmente.");
+    }
+  }, 1000); // 1s deu bom equilíbrio entre tentar e feedback (pode ajustar)
+}
+
+// Funções específicas
+function abrirFFNormal() {
+  // esquema hipotético; se o dispositivo tiver outro esquema, troque aqui
+  // Exemplo: "com.garena.freefire" não é um scheme; schemes comuns são freefire://
+  tryOpenApp("freefire://launch", "Não foi possível abrir o Free Fire (NORMAL).");
+}
+
+function abrirFFMax() {
+  tryOpenApp("freefiremax://launch", "Não foi possível abrir o Free Fire MAX.");
+}
+
+// Ativar botões existentes (INFO screen)
+document.getElementById("btnAbrirFFInfo").addEventListener("click", abrirFFNormal);
+document.getElementById("btnAbrirFFMaxInfo").addEventListener("click", abrirFFMax);
+
+// Também expor para console se quiser chamar programaticamente
+window.abrirFFNormal = abrirFFNormal;
+window.abrirFFMax = abrirFFMax;
+</script>
+</body>
+</html>
